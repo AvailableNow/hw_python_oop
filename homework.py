@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict, fields
 
 
 @dataclass
@@ -13,20 +13,14 @@ class InfoMessage:
 
     def get_message(self) -> str:
         """Получение строки с показателями тренировки"""
-        MY_PHRASE = (
+        MESSAGE = (
             'Тип тренировки: {}; '
             'Длительность: {:.3f} ч.; '
             'Дистанция: {:.3f} км; '
             'Ср. скорость: {:.3f} км/ч; '
             'Потрачено ккал: {:.3f}.'
         )
-        return MY_PHRASE.format(
-            self.training_type,
-            self.duration,
-            self.distance,
-            self.speed,
-            self.calories
-        )
+        return MESSAGE.format(*asdict(self).values())
 
 
 @dataclass
@@ -35,6 +29,7 @@ class Training:
     LEN_STEP = 0.65
     M_IN_KM = 1000
     MIN_IN_H = 60
+    KMH_IN_MSEC = round(M_IN_KM / (MIN_IN_H * 60), 3)
     action: int  # количество шагов.
     duration: float  # длительность тренировки в часах.
     weight: float  # вес спортсмена
@@ -53,7 +48,7 @@ class Training:
     def show_training_info(self) -> InfoMessage:
         """Вернуть информационное сообщение о выполненной тренировке."""
         return InfoMessage(
-            training_type=self.__class__.__name__,
+            training_type=type(self).__name__,
             duration=self.duration,
             distance=self.get_distance(),
             speed=self.get_mean_speed(),
@@ -70,9 +65,11 @@ class Running(Training):
     def get_spent_calories(self) -> float:
         """Получить количество затраченных калорий."""
         return (
-            (self.CALORIES_MEAN_SPEED_MULTIPLIER
-             * self.get_mean_speed()
-             + self.CALORIES_MEAN_SPEED_SHIFT)
+            (
+                self.CALORIES_MEAN_SPEED_MULTIPLIER
+                * self.get_mean_speed()
+                + self.CALORIES_MEAN_SPEED_SHIFT
+            )
             * self.weight / self.M_IN_KM
             * self.duration * self.MIN_IN_H
         )
@@ -83,22 +80,20 @@ class SportsWalking(Training):
     """Тренировка: спортивная ходьба."""
     CALORIES_WEIGHT_MULTIPLIER = 0.035
     CALORIES_SPEED_HEIGHT_MULTIPLIER = 0.029
-    M_IN_KM = 1000
-    S_IN_H = 3600
-    KMH_IN_MSEC = round(M_IN_KM / S_IN_H, 3)
     CM_IN_M = 100
-    weight: float
     height: float
 
     def get_spent_calories(self) -> float:
         """Получить количество затраченных калорий."""
 
         return (
-            (self.CALORIES_WEIGHT_MULTIPLIER * self.weight
-             + ((self.get_mean_speed() * self.KMH_IN_MSEC) ** 2)
-             / (self.height / self.CM_IN_M)
-             * self.CALORIES_SPEED_HEIGHT_MULTIPLIER
-             * self.weight)
+            (
+                self.CALORIES_WEIGHT_MULTIPLIER * self.weight
+                + ((self.get_mean_speed() * self.KMH_IN_MSEC) ** 2)
+                / (self.height / self.CM_IN_M)
+                * self.CALORIES_SPEED_HEIGHT_MULTIPLIER
+                * self.weight
+            )
             * self.duration * self.MIN_IN_H
         )
 
@@ -120,23 +115,29 @@ class Swimming(Training):
     def get_spent_calories(self) -> float:
         """Получить количество затраченных калорий."""
         return (
-            (self.get_mean_speed()
-             + self.CALORIES_MEAN_SPEED_SHIFT)
+            (
+                self.get_mean_speed()
+                + self.CALORIES_MEAN_SPEED_SHIFT
+            )
             * self.CALORIES_WEIGHT_MULTIPLIER
             * self.weight * self.duration
         )
 
 
-DICT_WORKOUT_TYPES = {
+WORKOUT_TYPES = {
     'SWM': Swimming,
     'RUN': Running,
     'WLK': SportsWalking
 }
 
 
-def read_package(workout_type: str, data: int) -> Training:
+def read_package(workout_type: str, data: list[int]) -> Training:
     """Прочитать данные полученные от датчиков."""
-    return DICT_WORKOUT_TYPES[workout_type](*data)
+    if workout_type not in WORKOUT_TYPES:
+        raise ValueError('Parameter "workout_type" is not in the dictionaly')
+    elif len(data) != len(fields(WORKOUT_TYPES[workout_type])):
+        raise TypeError('Incorrect number of arguments submitted to the class')
+    return WORKOUT_TYPES[workout_type](*data)
 
 
 def main(training: Training) -> None:
