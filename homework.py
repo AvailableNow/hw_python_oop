@@ -1,4 +1,4 @@
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, fields
 
 
 @dataclass
@@ -131,8 +131,15 @@ WORKOUT_TYPES = {
 }
 
 
-def read_package(workout_type: str, data: list[int]) -> Training:
+def read_package(workout_type: str, data: list) -> Training:
     """Прочитать данные полученные от датчиков."""
+    if workout_type not in WORKOUT_TYPES:
+        raise ValueError('Parameter "workout_type" is not in the dictionaly')
+    elif len(data) != len(fields(WORKOUT_TYPES[workout_type])):
+        raise ValueError(
+            'Incorrect number of'
+            'arguments submitted to the class'
+        )
     return WORKOUT_TYPES[workout_type](*data)
 
 
