@@ -10,17 +10,23 @@ class InfoMessage:
     distance: float
     speed: float
     calories: float
+    MESSAGE = (
+        'Тип тренировки: {traning_type}; '
+        'Длительность: {duraction:.3f} ч.; '
+        'Дистанция: {distance:.3f} км; '
+        'Ср. скорость: {speed:.3f} км/ч; '
+        'Потрачено ккал: {calories:.3f}.'
+        )
 
     def get_message(self) -> str:
         """Получение строки с показателями тренировки"""
-        MESSAGE = (
-            'Тип тренировки: {}; '
-            'Длительность: {:.3f} ч.; '
-            'Дистанция: {:.3f} км; '
-            'Ср. скорость: {:.3f} км/ч; '
-            'Потрачено ккал: {:.3f}.'
-        )
-        return MESSAGE.format(*asdict(self).values())
+        return self.MESSAGE.format(
+            traning_type = self.training_type,
+            duraction = self.duration,
+            distance = self.distance,
+            speed = self.speed,
+            calories = self.calories
+            )
 
 
 @dataclass
@@ -29,7 +35,6 @@ class Training:
     LEN_STEP = 0.65
     M_IN_KM = 1000
     MIN_IN_H = 60
-    KMH_IN_MSEC = round(M_IN_KM / (MIN_IN_H * 60), 3)
     action: int  # количество шагов.
     duration: float  # длительность тренировки в часах.
     weight: float  # вес спортсмена
@@ -81,6 +86,7 @@ class SportsWalking(Training):
     CALORIES_WEIGHT_MULTIPLIER = 0.035
     CALORIES_SPEED_HEIGHT_MULTIPLIER = 0.029
     CM_IN_M = 100
+    KMH_IN_MSEC = round(Training.M_IN_KM / (Training.MIN_IN_H * 60), 3)
     height: float
 
     def get_spent_calories(self) -> float:
@@ -129,16 +135,25 @@ WORKOUT_TYPES = {
     'RUN': Running,
     'WLK': SportsWalking
 }
-
+ERROR_TYPE = 'Parameter {type} is not in the dictionaly'
+ERROR_LEN_DATA = (
+    'Incorrect number of '
+    'arguments, '
+    'class {type} expects {len_arguments} '
+    'arguments but received {len_class}'
+)
 
 def read_package(workout_type: str, data: list) -> Training:
     """Прочитать данные полученные от датчиков."""
     if workout_type not in WORKOUT_TYPES:
-        raise ValueError('Parameter "workout_type" is not in the dictionaly')
-    elif len(data) != len(fields(WORKOUT_TYPES[workout_type])):
+        raise ValueError(ERROR_TYPE.format(type = workout_type))
+    if len(data) != len(fields(WORKOUT_TYPES[workout_type])):
         raise ValueError(
-            'Incorrect number of'
-            'arguments submitted to the class'
+            ERROR_LEN_DATA.format(
+            type = workout_type,
+            len_class = len(data),
+            len_arguments = len(fields(WORKOUT_TYPES[workout_type]))
+            )
         )
     return WORKOUT_TYPES[workout_type](*data)
 
@@ -152,7 +167,7 @@ if __name__ == '__main__':
     packages = [
         ('SWM', [720, 1, 80, 25, 40]),
         ('RUN', [15000, 1, 75]),
-        ('WLK', [9000, 1, 75, 180]),
+        ('WLK', [9000, 75, 180]),
     ]
 
     for workout_type, data in packages:
