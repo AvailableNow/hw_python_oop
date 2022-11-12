@@ -1,4 +1,4 @@
-from dataclasses import dataclass, asdict, fields
+from dataclasses import dataclass, fields
 
 
 @dataclass
@@ -16,17 +16,17 @@ class InfoMessage:
         'Дистанция: {distance:.3f} км; '
         'Ср. скорость: {speed:.3f} км/ч; '
         'Потрачено ккал: {calories:.3f}.'
-        )
+    )
 
     def get_message(self) -> str:
         """Получение строки с показателями тренировки"""
         return self.MESSAGE.format(
-            traning_type = self.training_type,
-            duraction = self.duration,
-            distance = self.distance,
-            speed = self.speed,
-            calories = self.calories
-            )
+            traning_type=self.training_type,
+            duraction=self.duration,
+            distance=self.distance,
+            speed=self.speed,
+            calories=self.calories
+        )
 
 
 @dataclass
@@ -143,16 +143,17 @@ ERROR_LEN_DATA = (
     'arguments but received {len_class}'
 )
 
+
 def read_package(workout_type: str, data: list) -> Training:
     """Прочитать данные полученные от датчиков."""
     if workout_type not in WORKOUT_TYPES:
-        raise ValueError(ERROR_TYPE.format(type = workout_type))
+        raise ValueError(ERROR_TYPE.format(type=workout_type))
     if len(data) != len(fields(WORKOUT_TYPES[workout_type])):
         raise ValueError(
             ERROR_LEN_DATA.format(
-            type = workout_type,
-            len_class = len(data),
-            len_arguments = len(fields(WORKOUT_TYPES[workout_type]))
+                type=workout_type,
+                len_class=len(data),
+                len_arguments=len(fields(WORKOUT_TYPES[workout_type]))
             )
         )
     return WORKOUT_TYPES[workout_type](*data)
